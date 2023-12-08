@@ -3,13 +3,12 @@
 /*                                                        :::      ::::::::   */
 /*   get_next_line_utils.c                              :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: marvin <marvin@student.42.fr>              +#+  +:+       +#+        */
+/*   By: akloster <akloster@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2023/12/04 15:50:04 by marvin            #+#    #+#             */
-/*   Updated: 2023/12/04 15:50:04 by marvin           ###   ########.fr       */
+/*   Created: 2023/12/05 12:53:28 by akloster          #+#    #+#             */
+/*   Updated: 2023/12/05 12:53:28 by akloster         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
-
 
 #include "get_next_line.h"
 
@@ -21,7 +20,10 @@ char	*ft_strjoin(char const *s1, char const *s2, int i_nl)
 
 	i = 0;
 	j = 0;
-	str = (char *)malloc((ft_strlen(s1) + ft_strlen(s2) + 1) * sizeof(char));
+	if (i_nl != -1)
+		str = (char *)malloc((ft_strlen(s1) + i_nl + 2) * sizeof(char));
+	else
+		str = (char *)malloc((ft_strlen(s1) + ft_strlen(s2) + 1) * sizeof(char));
 	if (!str)
 		return (NULL);
 	while (s1[i] != '\0')
@@ -29,7 +31,7 @@ char	*ft_strjoin(char const *s1, char const *s2, int i_nl)
 		str[i] = s1[i];
 		++i;
 	}
-	while (s2[j] != '\0')
+	while (s2[j] != '\0' && s2[i] != '\n')
 	{
 		str[i + j] = s2[j];
 		++j;
@@ -38,35 +40,32 @@ char	*ft_strjoin(char const *s1, char const *s2, int i_nl)
 	return (str);
 }
 
-char	*ft_strdup(char const *s, int i_nl)
+char	*ft_strdup(char const *s, int special_case)
 {
 	char	*str;
 	int		i;
 
 	i = 0;
-	if (i_nl > 0)
-		while (s[i + i_nl] != '\0')
+	if (special_case == 1)
+		while (s[i - 1] != '\n')
 			++i;
 	else
-		while (s[i] != '\0')
-			++i;
+		i = ft_strlen(s);
 	str = (char *)malloc((size_t)(1 + i) * sizeof(char));
 	if (!str)
 		return (NULL);
-	if (i_nl > 0)
-		i = i_nl;
+	i = -1;
+	if (special_case == 1)
+		while (s[++i - 1] != '\n')
+			str[i] = s[i];
 	else
-		i = 0;
-	while (s[i] != '\0')
-	{
-		str[i] = s[i];
-		++i;
-	}
+		while (s[++i] != '\0')
+			str[i] = s[i];
 	str[i] = '\0';
 	return (str);
 }
 
-t_list	*lstnew(char *buf, int fd)
+t_list	*ft_lstnew(char *buf, int fd)
 {
 	t_list	*new_node;
 
@@ -76,9 +75,6 @@ t_list	*lstnew(char *buf, int fd)
 	new_node->cnt = read(fd, buf, BUFFER_SIZE);
 	if (new_node->cnt < 0)
 		return (free(new_node), NULL);
-	if (new_node->cnt == 0 || new_node->cnt < BUFFER_SIZE)
-		new_node->status = 1;
-	new_node->status = 0;
 	new_node->content = ft_strdup(buf, 0);
 	if (!new_node->content)
 		return (free(new_node), NULL);
@@ -106,19 +102,21 @@ void	ft_lstclear(t_list **lst)
 	}
 }
 
-int	ft_lstadd_back(t_list **lst, int fd)
+int	ft_lstadd_back(t_list **head, int fd)
 {
 	t_list	*temp;
 	t_list	*new;
 	char	*buf;
 
-	temp = *lst;
+	temp = *head;
 	while (temp->next != NULL)
 		temp = temp->next;
 	buf = (char *)malloc((BUFFER_SIZE + 1) * sizeof(char));
 	if (!buf)
 		return (1);
 	new = ft_lstnew(buf, fd);
+	if (!new)
+		return (free(buf), 1);
 	temp->next = new;
 	return (0);
 }
