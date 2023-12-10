@@ -18,7 +18,7 @@ char	*ft_strjoin(char const *s1, char const *s2, int i_nl)
 	size_t	j;
 	char	*str;
 
-	i = 0;
+	i = -1;
 	j = 0;
 	if (i_nl != -1)
 		str = (char *)malloc((ft_strlen(s1) + i_nl + 2) * sizeof(char));
@@ -26,37 +26,36 @@ char	*ft_strjoin(char const *s1, char const *s2, int i_nl)
 		str = (char *)malloc((ft_strlen(s1) + ft_strlen(s2) + 1) * sizeof(char));
 	if (!str)
 		return (NULL);
-	while (s1[i] != '\0')
-	{
+	while (s1[++i] != '\0')
 		str[i] = s1[i];
-		++i;
-	}
-	while (s2[j] != '\0' && s2[i] != '\n')
+	while (s2[j] != '\0' && s2[j] != '\n')
 	{
 		str[i + j] = s2[j];
 		++j;
 	}
+	if (s2[i] == '\n')
+		str[i + j] = '\n';
+	++j;
 	str[i + j] = '\0';
 	return (str);
 }
 
-char	*ft_strdup(char const *s, int special_case)
+char	*ft_strdup(char const *s, int i_nl)
 {
 	char	*str;
 	int		i;
 
 	i = 0;
-	if (special_case == 1)
-		while (s[i - 1] != '\n')
-			++i;
+	if (i_nl > 0)
+		i = i_nl + 1;
 	else
 		i = ft_strlen(s);
 	str = (char *)malloc((size_t)(1 + i) * sizeof(char));
 	if (!str)
 		return (NULL);
 	i = -1;
-	if (special_case == 1)
-		while (s[++i - 1] != '\n')
+	if (i_nl > 0)
+		while (++i <= i_nl)
 			str[i] = s[i];
 	else
 		while (s[++i] != '\0')
@@ -73,7 +72,9 @@ t_list	*ft_lstnew(char *buf, int fd)
 	if (!new_node)
 		return (NULL);
 	new_node->cnt = read(fd, buf, BUFFER_SIZE);
-	if (new_node->cnt < 0)
+
+	// printf("new_node->cnt: |%d|", new_node->cnt);
+	if (new_node->cnt <= 0)
 		return (free(new_node), NULL);
 	new_node->content = ft_strdup(buf, 0);
 	if (!new_node->content)
@@ -114,9 +115,11 @@ int	ft_lstadd_back(t_list **head, int fd)
 	buf = (char *)malloc((BUFFER_SIZE + 1) * sizeof(char));
 	if (!buf)
 		return (1);
+	buf[BUFFER_SIZE] = '\0';	
 	new = ft_lstnew(buf, fd);
+	free(buf);
 	if (!new)
-		return (free(buf), 1);
+		return (1);
 	temp->next = new;
 	return (0);
 }
